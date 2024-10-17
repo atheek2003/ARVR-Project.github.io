@@ -41,7 +41,8 @@ module BP3D.Three {
       DRAGGING: 2, // performing an action while mouse depressed
       ROTATING: 3, // rotating with mouse down
       ROTATING_FREE: 4, // rotating with mouse up
-      PANNING: 5
+      PANNING: 5,
+      FPP: 6 // first-person perspective mode
     };
     var state = states.UNSELECTED;
 
@@ -169,6 +170,9 @@ module BP3D.Three {
             hud.update();
             scope.needsUpdate = true;
             break;
+          case states.FPP:
+            // Handle FPP mode mouse movement
+            break;
         }
       }
     }
@@ -209,6 +213,9 @@ module BP3D.Three {
           case states.ROTATING_FREE:
             switchState(states.SELECTED);
             break;
+          case states.FPP:
+            // Handle FPP mode mouse down
+            break;
         }
       }
     }
@@ -242,6 +249,9 @@ module BP3D.Three {
             break;
           case states.ROTATING_FREE:
             break;
+          case states.FPP:
+            // Handle FPP mode mouse up
+            break;
         }
       }
     }
@@ -271,6 +281,9 @@ module BP3D.Three {
           clickPressed();
           controls.enabled = false;
           break;
+        case states.FPP:
+          // Handle FPP mode entry
+          break;
       }
     }
 
@@ -288,6 +301,9 @@ module BP3D.Three {
           break;
         case states.ROTATING:
         case states.ROTATING_FREE:
+          break;
+        case states.FPP:
+          // Handle FPP mode exit
           break;
       }
     }
@@ -466,6 +482,14 @@ module BP3D.Three {
         scope.needsUpdate = true;
       }
     }
+
+    this.toggleFPP = function () {
+      if (state === states.FPP) {
+        switchState(states.UNSELECTED);
+      } else {
+        switchState(states.FPP);
+      }
+    };
 
     init();
   };

@@ -38,6 +38,19 @@ module BP3D.Three {
       scene.add(dirLight);
       scene.add(dirLight.target);
 
+      // HDR lighting setup
+      var pmremGenerator = new THREE.PMREMGenerator(renderer);
+      pmremGenerator.compileEquirectangularShader();
+
+      new THREE.RGBELoader()
+        .setPath('path/to/hdr/')
+        .load('hdr_texture.hdr', function (texture) {
+          var envMap = pmremGenerator.fromEquirectangular(texture).texture;
+          scene.environment = envMap;
+          texture.dispose();
+          pmremGenerator.dispose();
+        });
+
       floorplan.fireOnUpdatedRooms(updateShadowCamera);
     }
 
