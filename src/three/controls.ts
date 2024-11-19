@@ -260,6 +260,14 @@ module BP3D.Three {
 
       this.cameraMovedCallbacks.fire();
       this.needsUpdate = true;
+
+      // Implement FPP feature
+      if (this.fppEnabled) {
+        var direction = new THREE.Vector3();
+        this.object.getWorldDirection(direction);
+        this.object.position.add(direction.multiplyScalar(this.fppSpeed));
+        this.target.copy(this.object.position).add(direction);
+      }
     };
 
     function getAutoRotationAngle() {
@@ -359,6 +367,15 @@ module BP3D.Three {
         panStart.copy(panEnd);
       }
 
+      // FPP mouse controls
+      if (scope.fppEnabled) {
+        var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+        var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+        scope.object.rotation.y -= movementX * 0.002;
+        scope.object.rotation.x -= movementY * 0.002;
+      }
+
       // Greggman fix: https://github.com/greggman/three.js/commit/fde9f9917d6d8381f06bf22cdff766029d1761be
       scope.update();
     }
@@ -417,6 +434,19 @@ module BP3D.Three {
           break;
         case scope.keys.RIGHT:
           scope.pan(new THREE.Vector2(-scope.keyPanSpeed, 0));
+          break;
+        // FPP movement controls
+        case 87: // W
+          scope.object.translateZ(-scope.fppSpeed);
+          break;
+        case 83: // S
+          scope.object.translateZ(scope.fppSpeed);
+          break;
+        case 65: // A
+          scope.object.translateX(-scope.fppSpeed);
+          break;
+        case 68: // D
+          scope.object.translateX(scope.fppSpeed);
           break;
       }
     }
