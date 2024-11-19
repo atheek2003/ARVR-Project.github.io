@@ -1,5 +1,3 @@
-import { FirstPersonControls } from './first_person_controls';
-
 module BP3D.Three {
   export var Main = function (model, element, canvasElement, opts) {
     var scope = this;
@@ -29,7 +27,6 @@ module BP3D.Three {
     var camera;
     var renderer;
     this.controls;
-    var firstPersonControls;
     var canvas;
     var controller;
     var floorplan;
@@ -73,7 +70,6 @@ module BP3D.Three {
       var skybox = new Three.Skybox(scene);
 
       scope.controls = new Three.Controls(camera, domElement);
-      firstPersonControls = new FirstPersonControls(camera, domElement);
 
       hud = new Three.HUD(scope);
 
@@ -193,9 +189,6 @@ module BP3D.Three {
         requestAnimationFrame(animate);
       }, delay);
       render();
-      if (firstPersonControls) {
-        firstPersonControls.update(delay / 1000);
-      }
     }
 
     this.rotatePressed = function () {
