@@ -59,6 +59,10 @@ module BP3D.Three {
 
     this.needsUpdate = true;
 
+    // First-person perspective (FPP) view option
+    this.fppEnabled = false;
+    this.fppSpeed = 0.1;
+
     // internals
 
     var scope = this;
@@ -89,7 +93,8 @@ module BP3D.Three {
       PAN: 2,
       TOUCH_ROTATE: 3,
       TOUCH_DOLLY: 4,
-      TOUCH_PAN: 5
+      TOUCH_PAN: 5,
+      FPP: 6
     };
     var state = STATE.NONE;
 

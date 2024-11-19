@@ -128,6 +128,15 @@ module BP3D.Three {
         texture.repeat.set(width / scale, height / scale);
         texture.needsUpdate = true;
       }
+      // Add realistic textures and materials for the walls
+      var material = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      planes.forEach(plane => {
+        plane.material = material;
+      });
     }
 
     function updatePlanes() {
