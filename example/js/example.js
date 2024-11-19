@@ -530,3 +530,224 @@ $(document).ready(function() {
   // Load a simple rectangle room
   blueprint3d.model.loadSerialized('{"floorplan":{"corners":{"f90da5e3-9e0e-eba7-173d-eb0b071e838e":{"x":204.85099999999989,"y":289.052},"da026c08-d76a-a944-8e7b-096b752da9ed":{"x":672.2109999999999,"y":289.052},"4e3d65cb-54c0-0681-28bf-bddcc7bdb571":{"x":672.2109999999999,"y":-178.308},"71d4f128-ae80-3d58-9bd2-711c6ce6cdf2":{"x":204.85099999999989,"y":-178.308}},"walls":[{"corner1":"71d4f128-ae80-3d58-9bd2-711c6ce6cdf2","corner2":"f90da5e3-9e0e-eba7-173d-eb0b071e838e","frontTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0},"backTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0}},{"corner1":"f90da5e3-9e0e-eba7-173d-eb0b071e838e","corner2":"da026c08-d76a-a944-8e7b-096b752da9ed","frontTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0},"backTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0}},{"corner1":"da026c08-d76a-a944-8e7b-096b752da9ed","corner2":"4e3d65cb-54c0-0681-28bf-bddcc7bdb571","frontTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0},"backTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0}},{"corner1":"4e3d65cb-54c0-0681-28bf-bddcc7bdb571","corner2":"71d4f128-ae80-3d58-9bd2-711c6ce6cdf2","frontTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0},"backTexture":{"url":"rooms/textures/wallmap.png","stretch":true,"scale":0}}],"wallTextures":[],"floorTextures":{},"newFloorTextures":{}},"items":[]}');
 });
+
+// Add this to your example.js or create a new file
+
+var fppView = {
+  active: false,
+  height: 170, // Camera height in cm (average human eye level)
+  moveSpeed: 5,
+  rotateSpeed: Math.PI / 180, // 1 degree in radians
+  originalCamera: null,
+  
+  init: function(blueprint3d) {
+    this.blueprint3d = blueprint3d;
+    this.three = blueprint3d.three;
+    
+    // Store original camera controls
+    var controls = this.three.controls;
+    this.originalControls = {
+      target: controls.target.clone(),
+      position: controls.object.position.clone(),
+      up: controls.object.up.clone()
+    };
+    
+    // Bind to the FPP toggle button
+    $('#toggle-fpp').click((e) => {
+      e.preventDefault();
+      this.toggleFPP();
+    });
+    
+    // Add keyboard controls for FPP
+    $(document).on('keydown', (e) => {
+      if (!this.active) return;
+      
+      switch(e.which) {
+        case 87: // W key - move forward
+          this.moveForward();
+          break;
+        case 83: // S key - move backward
+          this.moveBackward();
+          break;
+        case 65: // A key - move left
+          this.moveLeft();
+          break;
+        case 68: // D key - move right
+          this.moveRight();
+          break;
+        case 81: // Q key - rotate left
+          this.rotateLeft();
+          break;
+        case 69: // E key - rotate right
+          this.rotateRight();
+          break;
+      }
+    });
+    
+    // Update camera controls for FPP movement
+    $('#move-up').click((e) => {
+      e.preventDefault();
+      if (this.active) this.moveForward();
+    });
+    
+    $('#move-down').click((e) => {
+      e.preventDefault();
+      if (this.active) this.moveBackward();
+    });
+    
+    $('#move-left').click((e) => {
+      e.preventDefault();
+      if (this.active) this.moveLeft();
+    });
+    
+    $('#move-right').click((e) => {
+      e.preventDefault();
+      if (this.active) this.moveRight();
+    });
+  },
+  
+  toggleFPP: function() {
+    this.active = !this.active;
+    $('#toggle-fpp').toggleClass('btn-primary', this.active);
+    
+    var controls = this.three.controls;
+    if (this.active) {
+      // Enter FPP mode
+      this.originalControls = {
+        target: controls.target.clone(),
+        position: controls.object.position.clone(),
+        up: controls.object.up.clone()
+      };
+      
+      // Set initial FPP position
+      var center = this.getFloorCenter();
+      controls.object.position.set(center.x, this.height, center.z);
+      controls.target.set(center.x, this.height, center.z - 1); // Look forward
+      controls.object.up.set(0, 1, 0);
+      
+      // Disable orbit controls
+      controls.enableZoom = false;
+      controls.enablePan = false;
+      controls.enableRotate = false;
+      
+    } else {
+      // Exit FPP mode - restore original view
+      controls.object.position.copy(this.originalControls.position);
+      controls.target.copy(this.originalControls.target);
+      controls.object.up.copy(this.originalControls.up);
+      
+      // Re-enable orbit controls
+      controls.enableZoom = true;
+      controls.enablePan = true;
+      controls.enableRotate = true;
+    }
+    
+    controls.update();
+  },
+  
+  getFloorCenter: function() {
+    var floorplan = this.blueprint3d.floorplanner.getFloorplan();
+    var min = new THREE.Vector3(Infinity, 0, Infinity);
+    var max = new THREE.Vector3(-Infinity, 0, -Infinity);
+    
+    // Calculate bounds of the floorplan
+    floorplan.rooms.forEach(room => {
+      room.corners.forEach(corner => {
+        min.x = Math.min(min.x, corner.x);
+        min.z = Math.min(min.z, corner.y);
+        max.x = Math.max(max.x, corner.x);
+        max.z = Math.max(max.z, corner.y);
+      });
+    });
+    
+    // Return center point
+    return new THREE.Vector3(
+      (min.x + max.x) / 2,
+      0,
+      (min.z + max.z) / 2
+    );
+  },
+  
+  moveForward: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var direction = new THREE.Vector3();
+    controls.object.getWorldDirection(direction);
+    direction.multiplyScalar(this.moveSpeed);
+    controls.object.position.add(direction);
+    controls.target.add(direction);
+    controls.update();
+  },
+  
+  moveBackward: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var direction = new THREE.Vector3();
+    controls.object.getWorldDirection(direction);
+    direction.multiplyScalar(-this.moveSpeed);
+    controls.object.position.add(direction);
+    controls.target.add(direction);
+    controls.update();
+  },
+  
+  moveLeft: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var direction = new THREE.Vector3();
+    controls.object.getWorldDirection(direction);
+    direction.cross(controls.object.up);
+    direction.multiplyScalar(-this.moveSpeed);
+    controls.object.position.add(direction);
+    controls.target.add(direction);
+    controls.update();
+  },
+  
+  moveRight: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var direction = new THREE.Vector3();
+    controls.object.getWorldDirection(direction);
+    direction.cross(controls.object.up);
+    direction.multiplyScalar(this.moveSpeed);
+    controls.object.position.add(direction);
+    controls.target.add(direction);
+    controls.update();
+  },
+  
+  rotateLeft: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var matrix = new THREE.Matrix4();
+    matrix.makeRotationY(this.rotateSpeed);
+    
+    var target = controls.target.clone();
+    target.sub(controls.object.position);
+    target.applyMatrix4(matrix);
+    target.add(controls.object.position);
+    controls.target.copy(target);
+    controls.update();
+  },
+  
+  rotateRight: function() {
+    if (!this.active) return;
+    var controls = this.three.controls;
+    var matrix = new THREE.Matrix4();
+    matrix.makeRotationY(-this.rotateSpeed);
+    
+    var target = controls.target.clone();
+    target.sub(controls.object.position);
+    target.applyMatrix4(matrix);
+    target.add(controls.object.position);
+    controls.target.copy(target);
+    controls.update();
+  }
+};
+
+// Initialize FPP after Blueprint3D is loaded
+$(document).ready(function() {
+  // Assuming blueprint3d is your Blueprint3D instance
+  var blueprint3d = new Blueprint3D(options);
+  
+  // Initialize FPP view
+  fppView.init(blueprint3d);
+});
