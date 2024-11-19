@@ -1,3 +1,4 @@
+<img src='image.png'><img>
 # Blueprint3D: Interactive Floor Planning & Design System
 
 ## Project Overview
